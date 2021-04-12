@@ -1,4 +1,4 @@
-import React from "react"
+import React, { useState } from "react"
 import { makeStyles } from "@material-ui/core/styles"
 
 import {
@@ -12,9 +12,10 @@ import {
 	TextField,
 	Drawer,
 	FormGroup,
+	FormControl,
+	FormControlLabel,
 	Paper,
 	Container,
-	FormControlLabel,
 	Switch,
 	Grid,
 } from "@material-ui/core"
@@ -35,27 +36,73 @@ const useStyles = makeStyles((theme) => ({
 	input: {
 		flex: "1 0 100%",
 	},
+	row: {
+		display: "flex",
+		flexDirection: "row",
+		justifyContent: "space-between",
+		width: "100%",
+		paddingTop: 10,
+	},
 }))
 
 function App() {
 	const classes = useStyles()
-	const [items, setItems] = React.useState([])
-	const [name, setName] = React.useState("")
-	const [student, setStudent] = React.useState(false)
+	const today = new Date()
+	const convertDate = (date) => {
+		const dd = String(date.getDate()).padStart(2, "0")
+		const mm = String(date.getMonth() + 1).padStart(2, "0")
+		const yyyy = date.getFullYear()
+
+		return yyyy + "-" + mm + "-" + dd
+	}
+	const [date, setDate] = useState(convertDate(today))
+	const [meeting, setMeeting] = useState(false)
+	const [name, setName] = useState("")
+	const [items, setItems] = useState([
+		{ date: convertDate(today), name: "Meeting", private: true },
+		{ date: convertDate(today), name: "Meeting 2", private: false },
+	])
 
 	const updateName = (event) => {
 		setName(event.target.value)
 	}
-	const handleChange = (event, selected) => {
-		setStudent(selected)
+	const handleDate = (event) => {
+		setDate(event.target.value)
+	}
+	const handleMeeting = () => {
+		setMeeting(!meeting)
 	}
 	const add = (event) => {
-		setItems(items.concat([{ name: name, student: student }]))
+		event.preventDefault()
+		let newItems = [...items]
+		newItems.push({
+			date: date,
+			name: name,
+			private: meeting,
+		})
+		setItems(newItems)
+		setDrawerOpen(false)
+		setName("")
+		setDate(convertDate(today))
 	}
 
-	const [drawerOpen, setDrawerOpen] = React.useState(false)
+	const sortByDate = () => {
+		let sortedItems = [...items]
+		sortedItems.sort((a, b) =>
+			a.date > b.date
+				? 1
+				: a.date === b.date
+				? a.name > b.name
+					? 1
+					: -1
+				: -1,
+		)
+		setItems(sortedItems)
+	}
 
-	const switchDrawer = (event) => {
+	const [drawerOpen, setDrawerOpen] = useState(false)
+
+	const switchDrawer = () => {
 		setDrawerOpen(!drawerOpen)
 	}
 	const closeDrawer = (event) => {
@@ -66,27 +113,37 @@ function App() {
 		<div className='App'>
 			<div>
 				<Drawer open={drawerOpen} onClose={closeDrawer}>
-					<FormGroup>
-						<TextField
-							id={"name"}
-							value={name}
-							onChange={updateName}
-							label='Name: '
-						/>
-						<FormControlLabel
-							control={
-								<Switch
-									checked={student}
-									onChange={handleChange}
-									value='student'
-								/>
-							}
-							label='Student'
-						/>
-					</FormGroup>
-					<Button variant='contained' id={"addButton"} onClick={add}>
-						Add
-					</Button>
+					<form onSubmit={add}>
+						<FormGroup>
+							<TextField
+								id={"name"}
+								label='Meeting name'
+								onChange={updateName}
+							/>
+							<FormControlLabel
+								control={
+									<Switch
+										checked={meeting}
+										onChange={handleMeeting}
+										value='meeting'
+									/>
+								}
+								label='Private'
+							/>
+							<TextField
+								id={"date"}
+								defaultValue={convertDate(today)}
+								onChange={handleDate}
+								type='date'
+							/>
+							<Button
+								variant='contained'
+								color='primary'
+								type='submit'>
+								Add
+							</Button>
+						</FormGroup>
+					</form>
 				</Drawer>
 			</div>
 			<Container maxWidth='sm'>
@@ -110,35 +167,35 @@ function App() {
 												<TableCell
 													component='th'
 													scope='row'>
+													{row.date}
+												</TableCell>
+												<TableCell>
 													{row.name}
 												</TableCell>
 												<TableCell>
-													{row.student
-														? "Student"
-														: "Not a student"}
-												</TableCell>
-												<TableCell>
-													{row.student
-														? "Student"
-														: "Not a student"}
+													{row.private
+														? "Private"
+														: "Not private"}
 												</TableCell>
 											</TableRow>
 										))}
 									</TableBody>
 								</Table>
 							</TableContainer>
-							<Button
-								variant='contained'
-								color='primary'
-								onClick={switchDrawer}>
-								Add
-							</Button>
-							<Button
-								variant='contained'
-								color='secondary'
-								onClick={switchDrawer}>
-								Sorting
-							</Button>
+							<Grid className={classes.row}>
+								<Button
+									variant='contained'
+									color='primary'
+									onClick={switchDrawer}>
+									Add
+								</Button>
+								<Button
+									variant='contained'
+									color='secondary'
+									onClick={sortByDate}>
+									Sorting
+								</Button>
+							</Grid>
 						</Paper>
 					</Grid>
 				</Grid>
